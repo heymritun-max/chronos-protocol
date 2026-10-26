@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chronos Protocol - AI Interrogation Room</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-mono">
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-cyan-500/30 bg-slate-950/80 p-4 flex items-center justify-between shadow-lg shadow-cyan-950/50">
+    <div class="flex items-center space-x-3">
+      <div class="w-3 h-3 rounded-full bg-cyan-400 animate-pulse"></div>
+      <h1 class="text-xl font-bold tracking-wider text-cyan-400">CHRONOS PROTOCOL // AI INTERROGATION ROOM</h1>
+    </div>
+    <div id="case-status" class="text-xs bg-cyan-950 text-cyan-300 border border-cyan-700/50 px-3 py-1 rounded">
+      CONNECTING TO MONGODB...
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 overflow-hidden">
+    
+    <!-- Left Panel: MongoDB Evidence Locker -->
+    <section class="bg-slate-950/60 border border-slate-800 rounded-lg p-4 flex flex-col space-y-4 overflow-y-auto max-h-[85vh]">
+      <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-2">
+        📂 GROUND TRUTH EVIDENCE FILE
+      </h2>
+      <div id="case-details" class="space-y-4 text-xs text-slate-300">
+        <p class="animate-pulse">Loading case data from database...</p>
+      </div>
+    </section>
+
+    <!-- Right Panel: Detective Chat Interrogation UI -->
+    <section class="md:col-span-2 bg-slate-950/80 border border-cyan-500/20 rounded-lg flex flex-col h-[85vh]">
+      <div class="p-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between">
+        <span class="text-xs text-cyan-400 font-bold">DETECTIVE CHRONOS [GROUNDED AI]</span>
+        <span class="text-[10px] text-slate-500">GEMINI-2.5-FLASH // ZERO HALLUCINATION</span>
+      </div>
+
+      <!-- Chat Output Area -->
+      <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm">
+        <div class="bg-cyan-950/30 border border-cyan-800/40 p-3 rounded-lg max-w-[85%]">
+          <p class="text-cyan-300 font-bold text-xs mb-1">Detective Chronos:</p>
+          <p class="text-slate-200">Welcome to the interrogation room, detective. Review the case files on the left and ask me anything about the suspects or evidence. Let's solve this.</p>
+        </div>
+      </div>
+
+      <!-- Input Form -->
+      <form id="interrogate-form" class="p-3 border-t border-slate-800 flex gap-2">
+        <input 
+          type="text" 
+          id="user-input" 
+          placeholder="Ask about suspects, motives, fingerprints, or timeline..." 
+          class="flex-1 bg-slate-900 border border-slate-700 rounded px-4 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500"
+          required
+        />
+        <button 
+          type="submit" 
+          class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold px-6 py-2 rounded transition text-sm flex items-center gap-1"
+        >
+          INTERROGATE
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    // Fetch Case Files from MongoDB
+    async function loadCaseData() {
+      try {
+        const res = await fetch('/api/case');
+        const data = await res.json();
+        
+        if (data) {
+          document.getElementById('case-status').innerText = 'STATUS: CASE FILE ACTIVE';
+          
+          let suspectsHTML = data.suspects.map(s => `
+            <div class="bg-slate-900/80 p-2 rounded border border-slate-800">
+              <span class="text-cyan-400 font-bold">${s.name}</span> (${s.role})
+              <p class="text-[11px] text-slate-400 mt-1"><b class="text-slate-300">Motive:</b> ${s.motive}</p>
+              <p class="text-[11px] text-slate-400"><b class="text-slate-300">Alibi:</b> ${s.alibi}</p>
+            </div>
+          `).join('');
+
+          let evidenceHTML = data.evidence.map(e => `
+            <div class="bg-slate-900/80 p-2 rounded border border-slate-800">
+              <span class="text-amber-400 font-bold">${e.item}</span> - ${e.location}
+              <p class="text-[11px] text-slate-400 mt-1">${e.details}</p>
+            </div>
+          `).join('');
+
+          document.getElementById('case-details').innerHTML = `
+            <div class="mb-3">
+              <h3 class="text-cyan-300 font-bold text-sm">${data.title}</h3>
+              <p class="text-slate-400 text-xs mt-1">${data.description}</p>
+            </div>
+            <h4 class="font-bold text-slate-300 border-b border-slate-800 pb-1 mt-4">SUSPECTS</h4>
+            ${suspectsHTML}
+            <h4 class="font-bold text-slate-300 border-b border-slate-800 pb-1 mt-4">EVIDENCE</h4>
+            ${evidenceHTML}
+          `;
+        }
+      } catch (err) {
+        document.getElementById('case-status').innerText = 'ERROR LOADING CASE DATA';
+      }
+    }
+
+    // Handle Interrogation Form Submission
+    document.getElementById('interrogate-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const inputEl = document.getElementById('user-input');
+      const question = inputEl.value.trim();
+      if (!question) return;
+
+      const chatBox = document.getElementById('chat-box');
+
+      // Add User Message
+      chatBox.innerHTML += `
+        <div class="flex justify-end">
+          <div class="bg-slate-800 border border-slate-700 p-3 rounded-lg max-w-[85%]">
+            <p class="text-slate-400 font-bold text-xs mb-1">You:</p>
+            <p class="text-slate-200">${question}</p>
+          </div>
+        </div>
+      `;
+
+      inputEl.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // Add Loading Indicator
+      const loadingId = 'loading-' + Date.now();
+      chatBox.innerHTML += `
+        <div id="${loadingId}" class="bg-cyan-950/30 border border-cyan-800/40 p-3 rounded-lg max-w-[85%]">
+          <p class="text-cyan-300 font-bold text-xs mb-1">Detective Chronos:</p>
+          <p class="text-slate-400 animate-pulse">Analyzing evidence database...</p>
+        </div>
+      `;
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch('/api/interrogate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question })
+        });
+        const data = await res.json();
+        
+        // Remove loading state & show result
+        const loadingEl = document.getElementById(loadingId);
+        const answerText = data.answer || data.response || data.text || "No output returned.";
+
+        loadingEl.innerHTML = `
+          <p class="text-cyan-300 font-bold text-xs mb-1">Detective Chronos:</p>
+          <p class="text-slate-200 whitespace-pre-line">${answerText}</p>
+        `;
+      } catch (err) {
+        document.getElementById(loadingId).innerHTML = `
+          <p class="text-rose-400 font-bold text-xs mb-1">System Failure:</p>
+          <p class="text-rose-300">Could not reach Detective Chronos. Check backend console.</p>
+        `;
+      }
+      
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+
+    loadCaseData();
+  </script>
+</body>
+</html>
